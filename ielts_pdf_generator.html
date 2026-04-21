@@ -1,0 +1,1286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IELTS Mock TRF PDF Generator</title>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+
+<style>
+  /* ============================================================
+     APP UI STYLES
+     ============================================================ */
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #f4f6f8;
+    color: #222;
+  }
+  .app-header {
+    background: linear-gradient(135deg, #1e3a8a, #2563eb);
+    color: #fff;
+    padding: 20px 32px;
+  }
+  .app-header h1 { margin: 0; font-size: 22px; }
+  .app-header p { margin: 4px 0 0; font-size: 13px; opacity: 0.85; }
+  .app-main {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 24px 32px 80px;
+  }
+  .panel {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 22px 24px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+  }
+  .panel h2 {
+    margin: 0 0 16px;
+    font-size: 16px;
+    color: #1e3a8a;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .panel h2 .step {
+    background: #1e3a8a;
+    color: #fff;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+  }
+  .panel-desc { margin: -10px 0 16px; font-size: 13px; color: #666; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 14px;
+  }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+  }
+  .field input, .field textarea, .field select {
+    font-family: inherit;
+    font-size: 13px;
+    padding: 8px 10px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: #fff;
+    transition: border-color 0.15s;
+  }
+  .field input:focus, .field textarea:focus, .field select:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+  }
+  .field textarea { resize: vertical; min-height: 60px; }
+  .field-wide { grid-column: 1 / -1; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.05s;
+    font-family: inherit;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: #2563eb; color: #fff; }
+  .btn-primary:hover:not(:disabled) { background: #1e40af; }
+  .btn-secondary { background: #e5e7eb; color: #111; }
+  .btn-secondary:hover:not(:disabled) { background: #d1d5db; }
+  .btn-success { background: #059669; color: #fff; }
+  .btn-success:hover:not(:disabled) { background: #047857; }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn-sm { padding: 5px 10px; font-size: 11px; }
+
+  .upload-zone {
+    border: 2px dashed #cbd5e1;
+    border-radius: 10px;
+    padding: 28px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: #f8fafc;
+  }
+  .upload-zone:hover, .upload-zone.drag { border-color: #2563eb; background: #eff6ff; }
+  .upload-zone input { display: none; }
+  .upload-zone .icon { font-size: 32px; margin-bottom: 8px; }
+  .upload-zone .msg { font-size: 14px; color: #475569; }
+  .upload-zone .file-name { color: #059669; font-weight: 600; margin-top: 6px; }
+
+  table.roster {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12.5px;
+  }
+  table.roster th, table.roster td {
+    border: 1px solid #e5e7eb;
+    padding: 7px 9px;
+    text-align: left;
+  }
+  table.roster th {
+    background: #f3f4f6;
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: #374151;
+  }
+  table.roster tr.amber { background: #fef3c7; }
+  table.roster td.band { text-align: center; font-family: "Courier New", monospace; }
+  table.roster td.actions { white-space: nowrap; }
+  .count-line { margin: 12px 0 0; font-size: 13px; color: #475569; }
+
+  .progress-wrap {
+    margin-top: 14px;
+    display: none;
+  }
+  .progress-wrap.active { display: block; }
+  .progress-bar {
+    height: 10px;
+    background: #e5e7eb;
+    border-radius: 5px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2563eb, #059669);
+    width: 0%;
+    transition: width 0.2s;
+  }
+  .progress-text { font-size: 12px; color: #475569; margin-top: 5px; }
+
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+  /* Preview modal */
+  .modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    z-index: 1000;
+    overflow-y: auto;
+    padding: 20px;
+  }
+  .modal-backdrop.active { display: flex; }
+  .modal-content {
+    background: #fff;
+    border-radius: 10px;
+    max-width: 960px;
+    width: 100%;
+    padding: 18px;
+    position: relative;
+  }
+  .modal-close {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
+  }
+  .modal-title { margin: 0 0 14px; font-size: 15px; color: #1e3a8a; }
+
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #1f2937;
+    color: #fff;
+    padding: 12px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.2s, transform 0.2s;
+    z-index: 2000;
+    max-width: 360px;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  /* TRF render area — kept on-screen (at viewport origin) but invisible so
+     html2canvas can capture a fully laid-out node. Moving it off-screen with
+     large negative coordinates causes html2canvas to sometimes produce a
+     blank canvas. */
+  #render-stage {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 900px;
+    opacity: 0;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  /* ============================================================
+     TRF TEMPLATE STYLES (mirrors ielts_trf (2).html)
+     ============================================================ */
+  .trf-container {
+    position: relative;
+    overflow: hidden;
+    background: #fff;
+    width: 900px;
+    padding: 30px 40px 40px 40px;
+    border: 1px solid #ccc;
+    font-family: 'Times New Roman', Times, serif;
+    color: #000;
+  }
+  .trf-container * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  /* MOCK TEST watermark (real DOM element — html2canvas captures it reliably) */
+  .trf-container .mock-watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-30deg);
+    font-size: 140px;
+    color: rgba(200, 0, 0, 0.08);
+    font-family: Arial, sans-serif;
+    font-weight: 900;
+    letter-spacing: 14px;
+    pointer-events: none;
+    z-index: 0;
+    white-space: nowrap;
+    user-select: none;
+  }
+  .trf-container > *:not(.mock-watermark) { position: relative; z-index: 1; }
+
+  .trf-container .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+  .trf-container .logo-area h1 {
+    font-family: Arial Black, Arial, sans-serif;
+    font-size: 42px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: #000;
+    line-height: 1;
+  }
+  .trf-container .logo-area h1 sup {
+    font-size: 14px;
+    font-weight: 400;
+    vertical-align: super;
+  }
+  .trf-container .logo-area h2 {
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    font-weight: bold;
+    margin-top: 2px;
+  }
+  .trf-container .academic-badge {
+    border: 2px solid #000;
+    padding: 10px 30px;
+    font-family: Arial, sans-serif;
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    align-self: center;
+  }
+  .trf-container .note-text {
+    font-size: 10px;
+    font-style: italic;
+    line-height: 1.4;
+    margin-bottom: 14px;
+  }
+  .trf-container .note-text span {
+    font-style: normal;
+    font-weight: bold;
+  }
+  .trf-container .meta-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+  }
+  .trf-container .meta-box {
+    border: 1px solid #000;
+    padding: 4px 10px;
+    font-size: 13px;
+    min-width: 80px;
+    display: inline-block;
+    text-align: center;
+    background: #fff;
+  }
+  .trf-container hr.divider {
+    border: none;
+    border-top: 1.5px solid #000;
+    margin: 10px 0 14px 0;
+  }
+  .trf-container .section-title {
+    font-family: Arial, sans-serif;
+    font-size: 15px;
+    font-weight: bold;
+    margin-bottom: 12px;
+  }
+  .trf-container .candidate-section {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .trf-container .candidate-fields { flex: 1; padding-right: 20px; }
+  .trf-container .field-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+  }
+  .trf-container .field-row label {
+    width: 110px;
+    flex-shrink: 0;
+  }
+  .trf-container .field-box {
+    background: #c8c8c8;
+    border: 1px solid #999;
+    padding: 5px 10px;
+    font-size: 13px;
+    font-weight: bold;
+    flex: 1;
+    min-height: 26px;
+  }
+  .trf-container .field-box.short { flex: none; width: 220px; }
+  .trf-container .photo-box {
+    width: 140px;
+    height: 160px;
+    border: 1px solid #aaa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #aaa;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    letter-spacing: 1px;
+    flex-shrink: 0;
+  }
+  .trf-container .scores-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    margin: 14px 0 10px 0;
+    flex-wrap: wrap;
+  }
+  .trf-container .score-box {
+    background: #c8c8c8;
+    border: 1px solid #999;
+    padding: 6px 14px;
+    font-size: 15px;
+    font-weight: bold;
+    min-width: 52px;
+    text-align: center;
+    min-height: 32px;
+  }
+  .trf-container .overall-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 10px;
+  }
+  .trf-container .overall-label,
+  .trf-container .cefr-label {
+    font-size: 11px;
+    font-weight: bold;
+    text-align: center;
+    line-height: 1.3;
+  }
+  .trf-container .score-box.overall {
+    font-size: 18px;
+    padding: 8px 16px;
+  }
+  .trf-container .examiner-section {
+    margin: 12px 0 16px 0;
+    padding: 12px 14px;
+    border: 1.5px solid #555;
+    background: #f7f7f7;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+  }
+  .trf-container .examiner-section .section-title {
+    font-size: 13px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 6px;
+  }
+  .trf-container .examiner-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .trf-container .examiner-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .trf-container .examiner-field label {
+    width: 160px;
+    flex-shrink: 0;
+    color: #333;
+    font-size: 12px;
+  }
+  .trf-container .efield-box {
+    flex: 1;
+    border-bottom: 1.5px solid #555;
+    padding: 3px 6px;
+    font-size: 13px;
+    font-weight: bold;
+    min-height: 22px;
+  }
+  .trf-container .bottom-section {
+    display: flex;
+    gap: 16px;
+    margin-top: 6px;
+  }
+  .trf-container .comments-area { flex: 1; }
+  .trf-container .comments-box {
+    border: 1px solid #999;
+    width: 100%;
+    min-height: 80px;
+    margin-top: 6px;
+    background: #fff;
+    padding: 8px 10px;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    white-space: pre-wrap;
+  }
+  .trf-container .admin-sig {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .trf-container .sig-line {
+    font-family: 'Brush Script MT', cursive;
+    font-size: 22px;
+    border-bottom: 1px solid #000;
+    padding: 0 10px;
+    min-width: 140px;
+    display: inline-block;
+  }
+  .trf-container .stamp-area { display: flex; gap: 10px; }
+  .trf-container .stamp-box {
+    border: 1px solid #999;
+    width: 120px;
+    text-align: center;
+    padding: 10px 8px;
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+  }
+  .trf-container .stamp-box .stamp-label {
+    font-weight: bold;
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+  .trf-container .stamp-circle {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    border: 1.5px solid #888;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+    line-height: 1.4;
+    color: #555;
+    white-space: pre-line;
+    padding: 4px;
+  }
+  .trf-container .mock-footer {
+    text-align: center;
+    font-size: 10px;
+    color: #666;
+    margin-top: 18px;
+    padding-top: 8px;
+    border-top: 1px dashed #aaa;
+    font-style: italic;
+  }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <h1>IELTS Mock TRF — PDF Generator</h1>
+  <p>Upload your batch Excel → fill common fields once → download a ZIP of per-student TRF PDFs with diagonal MOCK TEST watermark and per-student WhatsApp / Email delivery.</p>
+</div>
+
+<main class="app-main">
+
+  <!-- STEP 1: BATCH SETTINGS -->
+  <section class="panel">
+    <h2><span class="step">1</span> Batch Settings</h2>
+    <p class="panel-desc">Filled once for every student in this batch. Auto-saved to your browser — next upload will pre-fill.</p>
+    <div class="grid">
+      <div class="field">
+        <label>Centre Number</label>
+        <input type="text" id="s-centre" value="NGANJ">
+      </div>
+      <div class="field">
+        <label>Test Date</label>
+        <input type="date" id="s-date">
+      </div>
+      <div class="field">
+        <label>Student Status / Batch ID</label>
+        <input type="text" id="s-status" placeholder="e.g. 20260212">
+      </div>
+      <div class="field">
+        <label>Writing Examiner</label>
+        <input type="text" id="s-writing-ex" placeholder="e.g. Mr. James Harlow">
+      </div>
+      <div class="field">
+        <label>Speaking Examiner</label>
+        <input type="text" id="s-speaking-ex" placeholder="e.g. Ms. Priya Meenakshi">
+      </div>
+      <div class="field">
+        <label>Administrator Signature</label>
+        <input type="text" id="s-admin-sig" placeholder="e.g. Pagla Sifu">
+      </div>
+      <div class="field">
+        <label>Centre Stamp text (use newlines)</label>
+        <textarea id="s-centre-stamp" rows="3">idp
+INDIA
+IN855</textarea>
+      </div>
+      <div class="field">
+        <label>Validation Stamp text</label>
+        <input type="text" id="s-validation-stamp" value="IELTS">
+      </div>
+      <div class="field field-wide">
+        <label>Administrator Comments (same for all students — leave blank for none)</label>
+        <textarea id="s-admin-comments" rows="2" placeholder="Optional batch-wide note"></textarea>
+      </div>
+      <div class="field field-wide">
+        <label>Institute Footer Text (appears small at bottom of every PDF)</label>
+        <input type="text" id="s-footer" placeholder="e.g. Mock test by Prolific IELTS Academy · +880...">
+      </div>
+      <div class="field">
+        <label>WhatsApp country code (prepended to local numbers)</label>
+        <input type="text" id="s-country" value="880">
+      </div>
+      <div class="field field-wide">
+        <label>WhatsApp message template
+          <span style="font-weight:400;color:#888;">— placeholders: {{firstName}} {{fullName}} {{overall}} {{batch}}</span>
+        </label>
+        <textarea id="s-wa-template" rows="2">Hi {{firstName}}, your mock IELTS result (batch {{batch}}) is ready. Overall band: {{overall}}. The TRF has been downloaded to your device — please attach it to this chat.</textarea>
+      </div>
+      <div class="field">
+        <label>Email subject template</label>
+        <input type="text" id="s-email-subject" value="Your IELTS Mock Test Result — Batch {{batch}}">
+      </div>
+      <div class="field field-wide">
+        <label>Email body template</label>
+        <textarea id="s-email-body" rows="3">Dear {{firstName}},
+
+Please find your IELTS mock test result attached. Overall band: {{overall}}.
+
+Best regards.</textarea>
+      </div>
+    </div>
+  </section>
+
+  <!-- STEP 2: UPLOAD -->
+  <section class="panel">
+    <h2><span class="step">2</span> Upload Excel</h2>
+    <p class="panel-desc">Expected columns: Student Name, Number, E-Mail, Seat, L, R, W, S, Overall. Header row is auto-detected.</p>
+    <label class="upload-zone" id="upload-zone">
+      <input type="file" id="xlsx-input" accept=".xlsx,.xls">
+      <div class="icon">📂</div>
+      <div class="msg"><strong>Click to choose</strong> or drag & drop an .xlsx file</div>
+      <div class="file-name" id="file-name"></div>
+    </label>
+  </section>
+
+  <!-- STEP 3: ROSTER -->
+  <section class="panel" id="roster-panel" style="display:none;">
+    <h2><span class="step">3</span> Roster Preview</h2>
+    <p class="panel-desc">Amber rows have a missing Overall band (those PDFs will show blank score boxes). Uncheck to exclude a student from this run.</p>
+    <div style="overflow-x:auto;">
+      <table class="roster" id="roster-table">
+        <thead>
+          <tr>
+            <th><input type="checkbox" id="select-all" checked></th>
+            <th>Seat</th>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>L</th>
+            <th>R</th>
+            <th>W</th>
+            <th>S</th>
+            <th>Overall</th>
+            <th>CEFR</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="count-line" id="count-line"></div>
+  </section>
+
+  <!-- STEP 4: GENERATE -->
+  <section class="panel" id="generate-panel" style="display:none;">
+    <h2><span class="step">4</span> Preview & Generate</h2>
+    <div class="btn-row">
+      <button class="btn btn-secondary" id="btn-preview">Preview first selected student</button>
+      <button class="btn btn-success" id="btn-generate">Generate all PDFs (ZIP)</button>
+    </div>
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <div class="progress-text" id="progress-text">Starting…</div>
+    </div>
+  </section>
+
+</main>
+
+<!-- Preview modal -->
+<div class="modal-backdrop" id="preview-modal">
+  <div class="modal-content">
+    <button class="modal-close" id="preview-close">&times;</button>
+    <h3 class="modal-title">Preview</h3>
+    <div id="preview-body" style="overflow:auto; max-height: 78vh; display:flex; justify-content:center;"></div>
+  </div>
+</div>
+
+<!-- Off-screen render stage -->
+<div id="render-stage"></div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ==================================================================
+   SETTINGS (localStorage persistence)
+   ================================================================== */
+const SETTINGS_KEYS = [
+  's-centre','s-date','s-status','s-writing-ex','s-speaking-ex',
+  's-admin-sig','s-centre-stamp','s-validation-stamp','s-admin-comments',
+  's-footer','s-country','s-wa-template','s-email-subject','s-email-body'
+];
+
+function loadSettings() {
+  SETTINGS_KEYS.forEach(k => {
+    const saved = localStorage.getItem('ielts_trf_' + k);
+    if (saved !== null) {
+      const el = document.getElementById(k);
+      if (el) el.value = saved;
+    }
+  });
+  // Default date to today if nothing saved
+  const dateEl = document.getElementById('s-date');
+  if (!dateEl.value) {
+    const d = new Date();
+    dateEl.value = d.toISOString().slice(0, 10);
+  }
+}
+function saveSettings() {
+  SETTINGS_KEYS.forEach(k => {
+    const el = document.getElementById(k);
+    if (el) localStorage.setItem('ielts_trf_' + k, el.value);
+  });
+}
+SETTINGS_KEYS.forEach(k => {
+  const el = document.getElementById(k);
+  if (el) el.addEventListener('change', saveSettings);
+});
+loadSettings();
+
+/* ==================================================================
+   HELPERS
+   ================================================================== */
+function $(id) { return document.getElementById(id); }
+
+function toast(msg, ms = 3500) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove('show'), ms);
+}
+
+function escapeHtml(s) {
+  if (s === null || s === undefined) return '';
+  return String(s)
+    .replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;')
+    .replaceAll('"','&quot;').replaceAll("'",'&#39;');
+}
+
+function sanitizeFilenamePart(s) {
+  return String(s || '').replace(/[^a-zA-Z0-9]+/g, '').slice(0, 40) || 'X';
+}
+
+function normalizeBand(v) {
+  if (v === null || v === undefined) return '';
+  const s = String(v).trim();
+  if (!s || /^[xX\-]$/.test(s) || /^n\/?a$/i.test(s)) return '';
+  const n = parseFloat(s);
+  if (isNaN(n)) return '';
+  return n.toFixed(1);
+}
+
+function cefrFromOverall(overallStr) {
+  if (!overallStr) return '';
+  const n = parseFloat(overallStr);
+  if (isNaN(n)) return '';
+  if (n >= 9)   return 'C2';
+  if (n >= 7)   return 'C1';
+  if (n >= 5.5) return 'B2';
+  if (n >= 4)   return 'B1';
+  if (n >= 3)   return 'A2';
+  if (n >= 2)   return 'A1';
+  return '';
+}
+
+function splitName(full) {
+  const t = String(full || '').trim().replace(/\s+/g, ' ');
+  if (!t) return { first: '', last: '' };
+  const parts = t.split(' ');
+  if (parts.length === 1) return { first: parts[0], last: '' };
+  return { first: parts[0], last: parts.slice(1).join(' ') };
+}
+
+function formatDate(ymd) {
+  if (!ymd) return '';
+  const d = new Date(ymd + 'T00:00:00');
+  if (isNaN(d)) return ymd;
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${String(d.getDate()).padStart(2,'0')}/${months[d.getMonth()]}/${d.getFullYear()}`;
+}
+
+function sanitizePhone(raw, country) {
+  let s = String(raw || '').replace(/[^\d+]/g, '');
+  if (!s) return '';
+  if (s.startsWith('+')) return s.slice(1);
+  const cc = String(country || '880').replace(/\D/g,'');
+  if (s.startsWith(cc)) return s;
+  if (s.startsWith('0')) return cc + s.slice(1);
+  if (s.startsWith('1') && cc === '880') return cc + s;
+  return cc + s;
+}
+
+function applyTemplate(tpl, vars) {
+  return String(tpl || '').replace(/\{\{(\w+)\}\}/g, (_, k) => vars[k] ?? '');
+}
+
+/* ==================================================================
+   EXCEL PARSING
+   ================================================================== */
+let roster = [];
+const generatedPdfs = new Map(); // seat -> Blob
+
+function findHeaderRow(aoa) {
+  for (let i = 0; i < Math.min(aoa.length, 15); i++) {
+    const row = (aoa[i] || []).map(c => String(c || '').trim().toLowerCase());
+    if (row.some(c => c === 'student name') && row.some(c => c === 'seat')) return i;
+  }
+  return 0;
+}
+
+function columnIndex(header, names) {
+  const low = header.map(h => String(h || '').trim().toLowerCase());
+  for (const n of names) {
+    const i = low.indexOf(n.toLowerCase());
+    if (i !== -1) return i;
+  }
+  return -1;
+}
+
+function parseExcel(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const wb = XLSX.read(new Uint8Array(e.target.result), { type: 'array' });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const aoa = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+
+      const hIdx = findHeaderRow(aoa);
+      const header = aoa[hIdx] || [];
+      const iName = columnIndex(header, ['student name','name']);
+      const iNum  = columnIndex(header, ['number','phone','phone number']);
+      const iMail = columnIndex(header, ['e-mail','email']);
+      const iSeat = columnIndex(header, ['seat','seat no','seat number']);
+      const iL    = columnIndex(header, ['l','listening']);
+      const iR    = columnIndex(header, ['r','reading']);
+      const iW    = columnIndex(header, ['w','writing']);
+      const iS    = columnIndex(header, ['s','speaking']);
+      const iO    = columnIndex(header, ['overall','overall band']);
+
+      if (iName === -1) {
+        toast('Could not find "Student Name" column. Check your Excel headers.', 5000);
+        return;
+      }
+
+      roster = [];
+      for (let r = hIdx + 1; r < aoa.length; r++) {
+        const row = aoa[r] || [];
+        const name = String(row[iName] ?? '').trim();
+        const seat = String(row[iSeat] ?? '').trim();
+        if (!name && !seat) continue; // stop-gap blank row
+
+        roster.push({
+          seat: seat,
+          name: name,
+          phone: String(row[iNum] ?? '').trim(),
+          email: String(row[iMail] ?? '').trim(),
+          l: normalizeBand(row[iL]),
+          r: normalizeBand(row[iR]),
+          w: normalizeBand(row[iW]),
+          s: normalizeBand(row[iS]),
+          overall: normalizeBand(row[iO]),
+          selected: true,
+        });
+      }
+
+      if (roster.length === 0) {
+        toast('No student rows found under the header.', 5000);
+        return;
+      }
+
+      $('file-name').textContent = `Loaded ${roster.length} student(s) from ${file.name}`;
+      generatedPdfs.clear();
+      renderRoster();
+      $('roster-panel').style.display = '';
+      $('generate-panel').style.display = '';
+    } catch (err) {
+      console.error(err);
+      toast('Failed to parse Excel: ' + err.message, 5000);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/* Upload handlers */
+const uploadZone = $('upload-zone');
+const xlsxInput  = $('xlsx-input');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault();
+  uploadZone.classList.remove('drag');
+  if (e.dataTransfer.files[0]) { xlsxInput.files = e.dataTransfer.files; parseExcel(e.dataTransfer.files[0]); }
+});
+xlsxInput.addEventListener('change', e => { if (e.target.files[0]) parseExcel(e.target.files[0]); });
+
+/* ==================================================================
+   ROSTER RENDERING
+   ================================================================== */
+function renderRoster() {
+  const tbody = $('roster-table').querySelector('tbody');
+  tbody.innerHTML = '';
+  roster.forEach((stu, idx) => {
+    const cefr = cefrFromOverall(stu.overall);
+    const missingOverall = !stu.overall;
+    const tr = document.createElement('tr');
+    if (missingOverall) tr.classList.add('amber');
+    tr.innerHTML = `
+      <td><input type="checkbox" class="row-check" data-idx="${idx}" ${stu.selected ? 'checked' : ''}></td>
+      <td>${escapeHtml(stu.seat)}</td>
+      <td>${escapeHtml(stu.name)}</td>
+      <td>${escapeHtml(stu.phone)}</td>
+      <td>${escapeHtml(stu.email)}</td>
+      <td class="band">${escapeHtml(stu.l)}</td>
+      <td class="band">${escapeHtml(stu.r)}</td>
+      <td class="band">${escapeHtml(stu.w)}</td>
+      <td class="band">${escapeHtml(stu.s)}</td>
+      <td class="band">${escapeHtml(stu.overall)}</td>
+      <td class="band">${escapeHtml(cefr)}</td>
+      <td class="actions" data-actions-idx="${idx}">
+        <span style="color:#999;font-size:11px;">generate first</span>
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+  tbody.querySelectorAll('.row-check').forEach(cb => {
+    cb.addEventListener('change', e => {
+      roster[+e.target.dataset.idx].selected = e.target.checked;
+      updateCountLine();
+    });
+  });
+  updateCountLine();
+  // Re-attach action buttons if we already have generated PDFs for this roster
+  roster.forEach((stu, idx) => {
+    if (generatedPdfs.has(stu.seat)) attachActionButtons(idx);
+  });
+}
+
+$('select-all').addEventListener('change', (e) => {
+  roster.forEach(s => s.selected = e.target.checked);
+  document.querySelectorAll('.row-check').forEach(cb => cb.checked = e.target.checked);
+  updateCountLine();
+});
+
+function updateCountLine() {
+  const n = roster.filter(s => s.selected).length;
+  $('count-line').textContent = `${n} of ${roster.length} students will be generated.`;
+}
+
+/* ==================================================================
+   TRF TEMPLATE RENDERING
+   ================================================================== */
+function buildTrfHtml(stu, settings) {
+  const { first, last } = splitName(stu.name);
+  const cefr = cefrFromOverall(stu.overall);
+  const centreStampHtml = escapeHtml(settings.centreStamp).replaceAll('\n','<br>');
+
+  return `
+    <div class="trf-container" id="trf-live">
+      <div class="mock-watermark">MOCK TEST</div>
+      <div class="header">
+        <div class="logo-area">
+          <h1>IELTS<sup>™</sup></h1>
+          <h2>Test Report Form</h2>
+        </div>
+        <div class="academic-badge">ACADEMIC</div>
+      </div>
+      <p class="note-text">
+        <span>NOTE</span> <em>Admission to undergraduate and post graduate courses should be based on the ACADEMIC Reading and Writing Modules. GENERAL TRAINING Reading and Writing Modules are not designed to test the full range of language skills required for academic purposes.</em>
+      </p>
+      <div class="meta-row">
+        <label>Centre Number</label>
+        <span class="meta-box">${escapeHtml(settings.centre)}</span>
+        <label>Date</label>
+        <span class="meta-box">${escapeHtml(settings.dateFormatted)}</span>
+        <label>Student Status</label>
+        <span class="meta-box" style="min-width:110px;">${escapeHtml(settings.status)}</span>
+      </div>
+      <hr class="divider">
+      <div class="section-title">Candidate Details</div>
+      <div class="candidate-section">
+        <div class="candidate-fields">
+          <div class="field-row">
+            <label>First Name</label>
+            <div class="field-box">${escapeHtml(first)}</div>
+          </div>
+          <div class="field-row">
+            <label>Last Name</label>
+            <div class="field-box">${escapeHtml(last)}</div>
+          </div>
+          <div class="field-row">
+            <label>Email Address</label>
+            <div class="field-box">${escapeHtml(stu.email)}</div>
+          </div>
+          <div class="field-row">
+            <label>Phone Number</label>
+            <div class="field-box short">${escapeHtml(stu.phone)}</div>
+          </div>
+        </div>
+        <div class="photo-box">PASSPORT PHOTO</div>
+      </div>
+      <hr class="divider">
+      <div class="section-title">Test Results</div>
+      <hr class="divider" style="margin-top:0;">
+      <div class="scores-row">
+        <span class="score-label">Listening</span>
+        <span class="score-box">${escapeHtml(stu.l)}</span>
+        <span class="score-label">Reading</span>
+        <span class="score-box">${escapeHtml(stu.r)}</span>
+        <span class="score-label">Writing</span>
+        <span class="score-box">${escapeHtml(stu.w)}</span>
+        <span class="score-label">Speaking</span>
+        <span class="score-box">${escapeHtml(stu.s)}</span>
+        <div class="overall-group">
+          <div class="overall-label">Overall<br>Band<br>Score</div>
+          <span class="score-box overall">${escapeHtml(stu.overall)}</span>
+          <div class="cefr-label">CEFR<br>Level</div>
+          <span class="score-box">${escapeHtml(cefr)}</span>
+        </div>
+      </div>
+      <div class="examiner-section">
+        <div class="section-title">Examiner / Teacher Information</div>
+        <div class="examiner-grid">
+          <div class="examiner-field">
+            <label>Writing Examiner Name:</label>
+            <div class="efield-box">${escapeHtml(settings.writingEx)}</div>
+          </div>
+          <div class="examiner-field">
+            <label>Speaking Examiner Name:</label>
+            <div class="efield-box">${escapeHtml(settings.speakingEx)}</div>
+          </div>
+        </div>
+      </div>
+      <div class="bottom-section">
+        <div class="comments-area">
+          <div class="section-title" style="font-size:13px;">Administrator Comments</div>
+          <div class="comments-box">${escapeHtml(settings.adminComments)}</div>
+          <div class="admin-sig">
+            <span>Administrator Signature</span>
+            <span class="sig-line">${escapeHtml(settings.adminSig)}</span>
+          </div>
+        </div>
+        <div class="stamp-area">
+          <div class="stamp-box">
+            <div class="stamp-label">Centre stamp</div>
+            <div class="stamp-circle">${centreStampHtml}</div>
+          </div>
+          <div class="stamp-box">
+            <div class="stamp-label">Validation stamp</div>
+            <div class="stamp-circle">${escapeHtml(settings.validationStamp)}</div>
+          </div>
+        </div>
+      </div>
+      ${settings.footer ? `<div class="mock-footer">${escapeHtml(settings.footer)}</div>` : ''}
+    </div>
+  `;
+}
+
+function getSettings() {
+  return {
+    centre: $('s-centre').value.trim(),
+    dateFormatted: formatDate($('s-date').value),
+    dateRaw: $('s-date').value,
+    status: $('s-status').value.trim(),
+    writingEx: $('s-writing-ex').value.trim(),
+    speakingEx: $('s-speaking-ex').value.trim(),
+    adminSig: $('s-admin-sig').value.trim(),
+    adminComments: $('s-admin-comments').value,
+    centreStamp: $('s-centre-stamp').value,
+    validationStamp: $('s-validation-stamp').value.trim(),
+    footer: $('s-footer').value.trim(),
+    country: $('s-country').value.trim(),
+    waTemplate: $('s-wa-template').value,
+    emailSubject: $('s-email-subject').value,
+    emailBody: $('s-email-body').value,
+  };
+}
+
+/* ==================================================================
+   PDF GENERATION
+   ================================================================== */
+// html2canvas + jsPDF are bundled inside html2pdf.bundle.min.js and exposed
+// as globals (window.html2canvas, window.jspdf.jsPDF). We use them directly
+// instead of the html2pdf wrapper because the wrapper's auto-scaling clips
+// wide content to the right of the A4 page instead of fitting it to the
+// page width.
+async function renderToPdfBlob(stu, settings) {
+  const stage = $('render-stage');
+  stage.innerHTML = buildTrfHtml(stu, settings);
+  const node = stage.querySelector('.trf-container');
+
+  // Let the browser lay out the inserted node before html2canvas reads it.
+  await new Promise(requestAnimationFrame);
+  await new Promise(r => setTimeout(r, 30));
+
+  const canvas = await html2canvas(node, {
+    scale: 2,
+    useCORS: true,
+    backgroundColor: '#ffffff',
+    windowWidth: 900,
+    logging: false,
+  });
+
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });
+
+  const pageW  = pdf.internal.pageSize.getWidth();   // 210
+  const pageH  = pdf.internal.pageSize.getHeight();  // 297
+  const margin = 6;
+  const imgW   = pageW - margin * 2;                 // 198
+  const imgH   = (canvas.height * imgW) / canvas.width;
+
+  const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+  const usableH = pageH - margin * 2;
+  if (imgH <= usableH) {
+    // Fits on one page — normal TRF case
+    pdf.addImage(imgData, 'JPEG', margin, margin, imgW, imgH);
+  } else {
+    // Content taller than one A4 — slice across pages
+    let remaining = imgH;
+    let sourceY   = 0;
+    while (remaining > 0) {
+      const sliceH = Math.min(usableH, remaining);
+      pdf.addImage(imgData, 'JPEG', margin, margin - sourceY, imgW, imgH);
+      remaining -= sliceH;
+      sourceY   += sliceH;
+      if (remaining > 0) pdf.addPage();
+    }
+  }
+
+  const blob = pdf.output('blob');
+  stage.innerHTML = '';
+  return blob;
+}
+
+function pdfFilename(stu) {
+  const { first, last } = splitName(stu.name);
+  const seat = String(stu.seat || '').padStart(2, '0');
+  return `Seat-${sanitizeFilenamePart(seat)}_${sanitizeFilenamePart(first)}-${sanitizeFilenamePart(last)}.pdf`;
+}
+
+/* Preview button */
+$('btn-preview').addEventListener('click', async () => {
+  const firstSelected = roster.find(s => s.selected);
+  if (!firstSelected) { toast('No students selected.'); return; }
+  saveSettings();
+  const html = buildTrfHtml(firstSelected, getSettings());
+  const body = $('preview-body');
+  body.innerHTML = html;
+  $('preview-modal').classList.add('active');
+});
+$('preview-close').addEventListener('click', () => $('preview-modal').classList.remove('active'));
+$('preview-modal').addEventListener('click', e => {
+  if (e.target === $('preview-modal')) $('preview-modal').classList.remove('active');
+});
+
+/* Generate all */
+$('btn-generate').addEventListener('click', async () => {
+  const selected = roster.filter(s => s.selected);
+  if (selected.length === 0) { toast('No students selected.'); return; }
+  saveSettings();
+  const settings = getSettings();
+
+  const btn = $('btn-generate');
+  btn.disabled = true;
+  $('btn-preview').disabled = true;
+
+  const wrap = $('progress-wrap');
+  const fill = $('progress-fill');
+  const txt  = $('progress-text');
+  wrap.classList.add('active');
+  fill.style.width = '0%';
+  txt.textContent = `Starting — 0 / ${selected.length}`;
+
+  const zip = new JSZip();
+  generatedPdfs.clear();
+
+  try {
+    for (let i = 0; i < selected.length; i++) {
+      const stu = selected[i];
+      txt.textContent = `Generating ${i + 1} / ${selected.length}: Seat ${stu.seat} — ${stu.name}`;
+      const blob = await renderToPdfBlob(stu, settings);
+      const fname = pdfFilename(stu);
+      zip.file(fname, blob);
+      generatedPdfs.set(stu.seat, { blob, filename: fname });
+
+      const idx = roster.indexOf(stu);
+      if (idx !== -1) attachActionButtons(idx);
+
+      fill.style.width = `${((i + 1) / selected.length) * 100}%`;
+    }
+
+    txt.textContent = 'Bundling ZIP…';
+    const zipBlob = await zip.generateAsync({ type: 'blob' });
+    const batchId = settings.status || 'batch';
+    const today   = settings.dateRaw || new Date().toISOString().slice(0,10);
+    downloadBlob(zipBlob, `IELTS_TRF_${sanitizeFilenamePart(batchId)}_${today}.zip`);
+    txt.textContent = `Done — ${selected.length} PDF(s) bundled.`;
+    toast(`Generated ${selected.length} PDFs. Per-student WhatsApp / Email buttons are now active in the roster.`);
+  } catch (err) {
+    console.error(err);
+    txt.textContent = 'Failed: ' + err.message;
+    toast('Generation failed: ' + err.message, 6000);
+  } finally {
+    btn.disabled = false;
+    $('btn-preview').disabled = false;
+  }
+});
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+/* ==================================================================
+   PER-STUDENT ACTIONS (WhatsApp / Email / Re-download)
+   ================================================================== */
+function attachActionButtons(idx) {
+  const stu = roster[idx];
+  const cached = generatedPdfs.get(stu.seat);
+  if (!cached) return;
+  const cell = document.querySelector(`[data-actions-idx="${idx}"]`);
+  if (!cell) return;
+
+  const waDisabled   = !stu.phone;
+  const mailDisabled = !stu.email;
+
+  cell.innerHTML = `
+    <button class="btn btn-sm btn-secondary" data-act="download" title="Re-download this student's PDF">⬇️</button>
+    <button class="btn btn-sm btn-success" data-act="wa" ${waDisabled ? 'disabled' : ''}
+      title="${waDisabled ? 'No phone number' : 'Open WhatsApp with pre-filled message'}">📱 WA</button>
+    <button class="btn btn-sm btn-primary" data-act="mail" ${mailDisabled ? 'disabled' : ''}
+      title="${mailDisabled ? 'No email address' : 'Open email client with pre-filled message'}">✉️ Mail</button>
+  `;
+
+  cell.querySelectorAll('button').forEach(btn => {
+    btn.addEventListener('click', () => handleAction(idx, btn.dataset.act));
+  });
+}
+
+function handleAction(idx, action) {
+  const stu = roster[idx];
+  const cached = generatedPdfs.get(stu.seat);
+  if (!cached) { toast('PDF not generated yet.'); return; }
+  const settings = getSettings();
+  const { first } = splitName(stu.name);
+  const vars = {
+    firstName: first || stu.name,
+    fullName: stu.name,
+    overall: stu.overall || '—',
+    batch: settings.status || '',
+  };
+
+  if (action === 'download') {
+    downloadBlob(cached.blob, cached.filename);
+    return;
+  }
+
+  // Both WA and Mail flows: download PDF first, then open app
+  downloadBlob(cached.blob, cached.filename);
+
+  if (action === 'wa') {
+    const phone = sanitizePhone(stu.phone, settings.country);
+    const msg = applyTemplate(settings.waTemplate, vars);
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
+    window.open(url, '_blank');
+    toast('PDF downloaded. Drag it into the WhatsApp chat that just opened. (Browsers can’t auto-attach files.)', 6000);
+  } else if (action === 'mail') {
+    const subject = applyTemplate(settings.emailSubject, vars);
+    const body    = applyTemplate(settings.emailBody, vars);
+    const url = `mailto:${encodeURIComponent(stu.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = url;
+    toast('PDF downloaded. Attach it to the email draft that just opened.', 6000);
+  }
+}
+
+</script>
+</body>
+</html>

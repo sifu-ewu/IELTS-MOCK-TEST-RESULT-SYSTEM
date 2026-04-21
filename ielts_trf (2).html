@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IELTS Test Report Form</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Times New Roman', Times, serif;
+    background: #d0d0d0;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    min-height: 100vh;
+    padding: 30px 20px;
+  }
+
+  .trf-container {
+    background: #fff;
+    width: 900px;
+    padding: 30px 40px 40px 40px;
+    border: 1px solid #ccc;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  }
+
+  /* HEADER */
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+  }
+
+  .logo-area h1 {
+    font-family: Arial Black, Arial, sans-serif;
+    font-size: 42px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: #000;
+    line-height: 1;
+  }
+
+  .logo-area h1 sup {
+    font-size: 14px;
+    font-weight: 400;
+    vertical-align: super;
+  }
+
+  .logo-area h2 {
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+    font-weight: bold;
+    color: #000;
+    margin-top: 2px;
+  }
+
+  .academic-badge {
+    border: 2px solid #000;
+    padding: 10px 30px;
+    font-family: Arial, sans-serif;
+    font-size: 18px;
+    font-weight: bold;
+    letter-spacing: 2px;
+    align-self: center;
+  }
+
+  .note-text {
+    font-size: 10px;
+    font-style: italic;
+    line-height: 1.4;
+    margin-bottom: 14px;
+    color: #000;
+  }
+
+  .note-text span {
+    font-style: normal;
+    font-weight: bold;
+  }
+
+  /* META ROW */
+  .meta-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 16px;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+  }
+
+  .meta-row label {
+    font-weight: normal;
+    color: #000;
+  }
+
+  .meta-box {
+    border: 1px solid #000;
+    padding: 4px 10px;
+    font-size: 13px;
+    min-width: 80px;
+    display: inline-block;
+    text-align: center;
+    background: #fff;
+  }
+
+  hr.divider {
+    border: none;
+    border-top: 1.5px solid #000;
+    margin: 10px 0 14px 0;
+  }
+
+  /* SECTIONS */
+  .section-title {
+    font-family: Arial, sans-serif;
+    font-size: 15px;
+    font-weight: bold;
+    margin-bottom: 12px;
+    color: #000;
+  }
+
+  /* CANDIDATE DETAILS */
+  .candidate-section {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  .candidate-fields { flex: 1; padding-right: 20px; }
+
+  .field-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+  }
+
+  .field-row label {
+    width: 110px;
+    flex-shrink: 0;
+    color: #000;
+  }
+
+  .field-box {
+    background: #c8c8c8;
+    border: 1px solid #999;
+    padding: 5px 10px;
+    font-size: 13px;
+    font-weight: bold;
+    flex: 1;
+    color: #000;
+  }
+
+  .field-box.short {
+    flex: none;
+    width: 180px;
+  }
+
+  .photo-box {
+    width: 140px;
+    height: 160px;
+    border: 1px solid #aaa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #aaa;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    letter-spacing: 1px;
+    flex-shrink: 0;
+  }
+
+  /* TEST RESULTS */
+  .scores-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+    margin: 14px 0 10px 0;
+    flex-wrap: wrap;
+  }
+
+  .score-label { color: #000; }
+
+  .score-box {
+    background: #c8c8c8;
+    border: 1px solid #999;
+    padding: 6px 14px;
+    font-size: 15px;
+    font-weight: bold;
+    color: #000;
+    min-width: 52px;
+    text-align: center;
+  }
+
+  .overall-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 10px;
+  }
+
+  .overall-label {
+    font-size: 11px;
+    font-weight: bold;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  .score-box.overall {
+    font-size: 18px;
+    padding: 8px 16px;
+  }
+
+  .cefr-label {
+    font-size: 11px;
+    font-weight: bold;
+    text-align: center;
+    line-height: 1.3;
+  }
+
+  /* ── CUSTOM EXAMINER FIELD ── */
+  .examiner-section {
+    margin: 12px 0 16px 0;
+    padding: 12px 14px;
+    border: 1.5px solid #555;
+    background: #f7f7f7;
+    font-family: Arial, sans-serif;
+    font-size: 13px;
+  }
+
+  .examiner-section .section-title {
+    font-size: 13px;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 6px;
+  }
+
+  .examiner-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .examiner-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .examiner-field label {
+    width: 130px;
+    flex-shrink: 0;
+    color: #333;
+    font-size: 12px;
+  }
+
+  .examiner-field .efield-box {
+    flex: 1;
+    border-bottom: 1.5px solid #555;
+    padding: 3px 6px;
+    font-size: 13px;
+    font-weight: bold;
+    background: transparent;
+    color: #000;
+    min-height: 22px;
+  }
+
+  /* BOTTOM SECTION */
+  .bottom-section {
+    display: flex;
+    gap: 16px;
+    margin-top: 6px;
+  }
+
+  .comments-area {
+    flex: 1;
+  }
+
+  .comments-box {
+    border: 1px solid #999;
+    width: 100%;
+    height: 110px;
+    margin-top: 6px;
+    background: #fff;
+  }
+
+  .admin-sig {
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .sig-line {
+    font-family: 'Brush Script MT', cursive;
+    font-size: 20px;
+    border-bottom: 1px solid #000;
+    padding: 0 10px;
+    min-width: 120px;
+    display: inline-block;
+  }
+
+  .stamp-area {
+    display: flex;
+    gap: 10px;
+  }
+
+  .stamp-box {
+    border: 1px solid #999;
+    width: 120px;
+    text-align: center;
+    padding: 10px 8px;
+    font-family: Arial, sans-serif;
+    font-size: 11px;
+  }
+
+  .stamp-box .stamp-label {
+    font-weight: bold;
+    font-size: 11px;
+    margin-bottom: 6px;
+  }
+
+  .stamp-circle {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    border: 1.5px solid #888;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+    line-height: 1.4;
+    color: #555;
+  }
+</style>
+</head>
+<body>
+<div class="trf-container">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo-area">
+      <h1>IELTS<sup>™</sup></h1>
+      <h2>Test Report Form</h2>
+    </div>
+    <div class="academic-badge">ACADEMIC</div>
+  </div>
+
+  <p class="note-text">
+    <span>NOTE</span> <em>Admission to undergraduate and post graduate courses should be based on the ACADEMIC Reading and Writing Modules. GENERAL TRAINING Reading and Writing Modules are not designed to test the full range of language skills required for academic purposes.</em>
+  </p>
+
+  <!-- META -->
+  <div class="meta-row">
+    <label>Centre Number</label>
+    <span class="meta-box">NGANJ</span>
+    <label>Date</label>
+    <span class="meta-box">26/Feb/2026</span>
+    <label>Student Status</label>
+    <span class="meta-box" style="min-width:110px;">20260212</span>
+  </div>
+
+  <hr class="divider">
+
+  <!-- CANDIDATE DETAILS -->
+  <div class="section-title">Candidate Details</div>
+  <div class="candidate-section">
+    <div class="candidate-fields">
+      <div class="field-row">
+        <label>First Name</label>
+        <div class="field-box">-</div>
+      </div>
+      <div class="field-row">
+        <label>Last Name</label>
+        <div class="field-box">ADOR</div>
+      </div>
+      <div class="field-row">
+        <label>Email Address</label>
+        <div class="field-box">-</div>
+      </div>
+      <div class="field-row">
+        <label>Phone Number</label>
+        <div class="field-box short">-</div>
+      </div>
+    </div>
+    <div class="photo-box">PASSPORT PHOTO</div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- TEST RESULTS -->
+  <div class="section-title">Test Results</div>
+  <hr class="divider" style="margin-top:0;">
+
+  <div class="scores-row">
+    <span class="score-label">Listening</span>
+    <span class="score-box">3.0</span>
+    <span class="score-label">Reading</span>
+    <span class="score-box">4.0</span>
+    <span class="score-label">Writing</span>
+    <span class="score-box">6.0</span>
+    <span class="score-label">Speaking</span>
+    <span class="score-box">5.0</span>
+
+    <div class="overall-group">
+      <div class="overall-label">Overall<br>Band<br>Score</div>
+      <span class="score-box overall">4.5</span>
+      <div class="cefr-label">CEFR<br>Level</div>
+      <span class="score-box">B1</span>
+    </div>
+  </div>
+
+  <!-- ── CUSTOM EXAMINER FIELD (added below scores) ── -->
+  <div class="examiner-section">
+    <div class="section-title">Examiner / Teacher Information</div>
+    <div class="examiner-grid">
+      <div class="examiner-field">
+        <label>Writing Examiner Name:</label>
+        <div class="efield-box">Mr. James Harlow</div>
+      </div>
+      <div class="examiner-field">
+        <label>Speaking Examiner Name:</label>
+        <div class="efield-box">Ms. Priya Meenakshi</div>
+      </div>
+
+    </div>
+  </div>
+  <!-- ── END CUSTOM FIELD ── -->
+
+  <!-- BOTTOM -->
+  <div class="bottom-section">
+    <div class="comments-area">
+      <div class="section-title" style="font-size:13px;">Administrator Comments</div>
+      <div class="comments-box"></div>
+      <div class="admin-sig">
+        <span>Administrator Signature</span>
+        <span class="sig-line">Pagla Sifu</span>
+      </div>
+    </div>
+
+    <div class="stamp-area">
+      <div class="stamp-box">
+        <div class="stamp-label">Centre stamp</div>
+        <div class="stamp-circle">idp<br>INDIA<br>IN855</div>
+      </div>
+      <div class="stamp-box">
+        <div class="stamp-label">Validation stamp</div>
+        <div class="stamp-circle">IELTS</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

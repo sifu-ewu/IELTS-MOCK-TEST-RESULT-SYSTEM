@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.cache/
+.env
+.env.local
+.DS_Store
+*.log
+npm-debug.log*
+.vite/
