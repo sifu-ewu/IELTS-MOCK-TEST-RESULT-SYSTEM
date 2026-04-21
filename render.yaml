@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: ielts-trf-generator
+    runtime: node
+    plan: free
+    # The app lives in a subfolder of the repo; Render cd's into it for
+    # install, build, and start.
+    rootDir: ielts-trf-react
+    buildCommand: npm install && npm run build
+    startCommand: node server/server.js
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: 20.19.6
+      - key: NODE_ENV
+        value: production
