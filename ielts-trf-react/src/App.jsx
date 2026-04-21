@@ -17,12 +17,40 @@ const DEFAULT_SETTINGS = {
   validationStamp: 'IELTS',
   footer: '',
   country: '880',
-  waTemplate: 'Hi {{firstName}}, your mock IELTS result (batch {{batch}}) is ready. Overall band: {{overall}}. The TRF has been downloaded to your device — please attach it to this chat.',
-  emailSubject: 'Your IELTS Mock Test Result — Batch {{batch}}',
-  emailBody: 'Dear {{firstName}},\n\nPlease find your IELTS mock test result attached. Overall band: {{overall}}.\n\nBest regards.',
+  waTemplate: `Dear {{firstName}},
+
+Your IELTS Mock Test result ({{date}}) is ready.
+
+Your scores:
+Listening: {{listening}}
+Reading: {{reading}}
+Writing: {{writing}}
+Speaking: {{speaking}}
+Overall Band: {{overall}} (CEFR {{cefr}})
+
+The Test Report Form PDF has been saved to your device — please attach it to this chat for your records.
+
+Best regards,
+IELTS Bangladesh`,
+  emailSubject: 'IELTS Mock Test Result — {{date}}',
+  emailBody: `Dear {{firstName}},
+
+Your IELTS Mock Test result from {{date}} is attached as a PDF.
+
+Your scores:
+Listening: {{listening}}
+Reading: {{reading}}
+Writing: {{writing}}
+Speaking: {{speaking}}
+Overall Band: {{overall}} (CEFR Level: {{cefr}})
+
+Please review the attached Test Report Form. If you have any questions about your performance, feel free to reach out.
+
+Best regards,
+IELTS Bangladesh`,
 };
 
-const STORAGE_KEY = 'ielts_trf_settings_v3';
+const STORAGE_KEY = 'ielts_trf_settings_v4';
 
 function useLocalStorageSettings() {
   const [settings, setSettings] = useState(() => {
@@ -216,9 +244,15 @@ export default function App() {
     const { first } = splitName(student.name);
     const vars = {
       firstName: first || student.name,
-      fullName: student.name,
-      overall: student.overall || '—',
-      batch: settings.status || '',
+      fullName:  student.name,
+      date:      formatDate(settings.date),
+      listening: student.l || '—',
+      reading:   student.r || '—',
+      writing:   student.w || '—',
+      speaking:  student.s || '—',
+      overall:   student.overall || '—',
+      cefr:      cefrFromOverall(student.overall) || '—',
+      batch:     settings.status || '',
     };
 
     if (kind === 'download') {
@@ -270,9 +304,9 @@ export default function App() {
             <Field label="Administrator Comments (same for all)" textarea rows={2} wide value={settings.adminComments} onChange={v => updateSettings({ adminComments: v })} />
             <Field label="Institute Footer Text" wide value={settings.footer} onChange={v => updateSettings({ footer: v })} placeholder="e.g. Mock test by Prolific IELTS Academy · +880..." />
             <Field label="WhatsApp Country Code" value={settings.country} onChange={v => updateSettings({ country: v })} />
-            <Field label="WhatsApp Template (placeholders: {{firstName}} {{overall}} {{batch}})" textarea rows={2} wide value={settings.waTemplate} onChange={v => updateSettings({ waTemplate: v })} />
+            <Field label="WhatsApp Template — placeholders: {{firstName}} {{date}} {{listening}} {{reading}} {{writing}} {{speaking}} {{overall}} {{cefr}} {{batch}}" textarea rows={8} wide value={settings.waTemplate} onChange={v => updateSettings({ waTemplate: v })} />
             <Field label="Email Subject Template" value={settings.emailSubject} onChange={v => updateSettings({ emailSubject: v })} />
-            <Field label="Email Body Template" textarea rows={3} wide value={settings.emailBody} onChange={v => updateSettings({ emailBody: v })} />
+            <Field label="Email Body Template (same placeholders as WhatsApp)" textarea rows={10} wide value={settings.emailBody} onChange={v => updateSettings({ emailBody: v })} />
           </div>
         </section>
 
