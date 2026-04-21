@@ -17,3 +17,9 @@ services:
         value: 20.19.6
       - key: NODE_ENV
         value: production
+      # Keep Chromium inside /opt/render/project/src/... because Render only
+      # persists that tree between build and runtime. The default ~/.cache
+      # path lives outside it and gets wiped, causing the runtime to fail
+      # with "Could not find Chrome".
+      - key: PUPPETEER_CACHE_DIR
+        value: /opt/render/project/src/ielts-trf-react/.puppeteer-cache
