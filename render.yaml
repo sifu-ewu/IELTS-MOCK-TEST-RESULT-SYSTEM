@@ -6,7 +6,9 @@ services:
     # The app lives in a subfolder of the repo; Render cd's into it for
     # install, build, and start.
     rootDir: ielts-trf-react
-    buildCommand: npm install && npm run build
+    # --include=dev forces devDependencies (vite, @vitejs/plugin-react) to
+    # install even though NODE_ENV=production is set. Needed for `vite build`.
+    buildCommand: npm install --include=dev && npm run build
     startCommand: node server/server.js
     healthCheckPath: /api/health
     autoDeploy: true
