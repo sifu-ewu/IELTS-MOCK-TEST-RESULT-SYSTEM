@@ -260,14 +260,13 @@ export default function App() {
       return;
     }
 
-    downloadBlob(cached.blob, cached.filename);
-
     if (kind === 'wa') {
       const phone = sanitizePhone(student.phone, settings.country);
       const msg = applyTemplate(settings.waTemplate, vars);
       window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
-      showToast('PDF downloaded. Drag it into the WhatsApp chat. Browsers can’t auto-attach files.', 6000);
+      showToast('Opening WhatsApp. Use the ⬇️ button if you need to re-download the PDF to attach.', 6000);
     } else if (kind === 'mail') {
+      downloadBlob(cached.blob, cached.filename);
       const subject = applyTemplate(settings.emailSubject, vars);
       const body = applyTemplate(settings.emailBody, vars);
       window.location.href = `mailto:${encodeURIComponent(student.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
