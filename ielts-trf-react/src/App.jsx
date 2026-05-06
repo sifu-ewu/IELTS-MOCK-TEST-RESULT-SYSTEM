@@ -123,6 +123,7 @@ export default function App() {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [progress, setProgress] = useState({ active: false, current: 0, total: 0, message: '' });
   const [generatedPdfs, setGeneratedPdfs] = useState(new Map());
+  const [generatingSeats, setGeneratingSeats] = useState(new Set());
   const [toastMsg, setToastMsg] = useState('');
   const [serverOk, setServerOk] = useState(null);
   const toastTimer = useRef(null);
@@ -155,6 +156,7 @@ export default function App() {
       }
       setRoster(list);
       setGeneratedPdfs(new Map());
+      setGeneratingSeats(new Set());
       setPreviewIdx(null);
       if (previewUrl) { URL.revokeObjectURL(previewUrl); setPreviewUrl(''); }
     } catch (err) {
@@ -235,6 +237,34 @@ export default function App() {
       console.error(err);
       setProgress({ active: false, current: 0, total: 0, message: '' });
       showToast('Generation failed: ' + (err.message || err), 6500);
+    }
+  }
+
+  async function handleGenerateOne(student) {
+    if (!student.seat) { showToast('Row has no seat number — cannot key the PDF.'); return; }
+    if (generatingSeats.has(student.seat)) return;
+    setGeneratingSeats(prev => {
+      const next = new Set(prev);
+      next.add(student.seat);
+      return next;
+    });
+    try {
+      const blob = await fetchPdfBlob(student, settings);
+      const fname = pdfFilename(student);
+      setGeneratedPdfs(prev => {
+        const next = new Map(prev);
+        next.set(student.seat, { blob, filename: fname });
+        return next;
+      });
+      showToast(`Generated PDF for ${student.name}. WhatsApp / Email buttons are now active.`);
+    } catch (err) {
+      showToast(`Generation failed for ${student.name}: ${err.message || err}`, 6500);
+    } finally {
+      setGeneratingSeats(prev => {
+        const next = new Set(prev);
+        next.delete(student.seat);
+        return next;
+      });
     }
   }
 
@@ -339,6 +369,7 @@ export default function App() {
                   {roster.map((s, idx) => {
                     const cefr = cefrFromOverall(s.overall);
                     const hasPdf = generatedPdfs.has(s.seat);
+                    const isGenerating = generatingSeats.has(s.seat);
                     return (
                       <tr key={idx} className={!s.overall ? 'amber' : ''}>
                         <td><input type="checkbox" checked={s.selected} onChange={() => toggleRow(idx)} /></td>
@@ -360,7 +391,14 @@ export default function App() {
                               <button className="btn btn-sm btn-primary" onClick={() => handleDelivery(s, 'mail')} disabled={!s.email} title={!s.email ? 'No email' : 'Open email'}>✉️ Mail</button>
                             </>
                           ) : (
-                            <span className="muted">generate first</span>
+                            <button
+                              className="btn btn-sm btn-success"
+                              onClick={() => handleGenerateOne(s)}
+                              disabled={isGenerating || progress.active || serverOk === false}
+                              title={serverOk === false ? 'Backend unreachable' : 'Generate this student’s PDF'}
+                            >
+                              {isGenerating ? 'Generating…' : 'Generate'}
+                            </button>
                           )}
                         </td>
                       </tr>
